@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Normies Holder Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #EFEFEF; --bg2: #E0E0E0; --ink: #121212;
+      --ink2: #555; --border: #121212;
+      --ff-head: 'Silkscreen', monospace;
+      --ff-body: 'Space Mono', monospace;
+    }
+    body.dark {
+      --bg: #111; --bg2: #1a1a1a; --ink: #EFEFEF;
+      --ink2: #888; --border: #EFEFEF;
+    }
+    body { background: var(--bg); color: var(--ink); font-family: var(--ff-body); font-size: 12px; letter-spacing: .04em; min-height: 100vh; transition: background .15s, color .15s; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--ink2); }
+
+    /* NAV */
+    nav { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 48px; }
+    .nav-logo { font-family: var(--ff-head); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    .nav-btn { background: none; border: 1px solid transparent; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink); font-size: 16px; transition: border-color .1s; }
+    .nav-btn:hover { border-color: var(--border); }
+
+    /* PAGE */
+    .page { max-width: 1100px; margin: 0 auto; padding: 0 32px 64px; }
+
+    /* HERO */
+    .hero { padding: 60px 0 44px; border-bottom: 1px solid var(--border); }
+    .hero-label { font-size: 10px; letter-spacing: .16em; color: var(--ink2); text-transform: uppercase; margin-bottom: 14px; }
+    .hero h1 { font-family: var(--ff-head); font-size: clamp(26px, 4.5vw, 46px); text-transform: uppercase; line-height: 1.1; margin-bottom: 18px; }
+    .hero-sub { font-size: 11px; color: var(--ink2); line-height: 2; letter-spacing: .06em; max-width: 500px; margin-bottom: 24px; }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* BUTTONS */
+    .btn { font-family: var(--ff-body); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; background: none; border: 1px solid var(--border); color: var(--ink); padding: 10px 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background .1s, color .1s; }
+    .btn:hover:not(:disabled) { background: var(--ink); color: var(--bg); }
+    .btn-fill { background: var(--ink); color: var(--bg); }
+    .btn-fill:hover:not(:disabled) { background: var(--bg); color: var(--ink); }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn-sm { padding: 6px 12px; font-size: 9px; }
+
+    /* FILTER */
+    .filter-section { padding: 28px 0; border-bottom: 1px solid var(--border); }
+    .sec-label { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink2); margin-bottom: 18px; display: flex; gap: 10px; align-items: center; }
+    .sec-label::after { content: ""; flex: 1; height: 1px; background: var(--border); opacity: .2; }
+    .filter-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .f-group { display: flex; flex-direction: column; gap: 6px; }
+    .f-label { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
+    select {
+      background: var(--bg); border: 1px solid var(--border); color: var(--ink);
+      font-family: var(--ff-body); font-size: 10px; padding: 9px 32px 9px 12px;
+      outline: none; letter-spacing: .04em; cursor: pointer; min-width: 200px; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23121212'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    body.dark select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23EFEFEF'/%3E%3C/svg%3E"); }
+    select:focus { outline: 2px solid var(--ink); outline-offset: -2px; }
+    select:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* PROGRESS */
+    .progress-wrap { margin-top: 18px; display: none; }
+    .progress-wrap.show { display: block; }
+    .progress-info { display: flex; justify-content: space-between; font-size: 8px; letter-spacing: .1em; color: var(--ink2); margin-bottom: 6px; text-transform: uppercase; }
+    .progress-track { height: 2px; background: var(--bg2); border: 1px solid var(--border); }
+    .progress-fill { height: 100%; background: var(--ink); transition: width .2s ease; width: 0%; }
+    .status-msg { margin-top: 10px; font-size: 9px; letter-spacing: .1em; color: var(--ink2); text-transform: uppercase; min-height: 14px; }
+    .status-msg.err { color: #c0392b; }
+    .hint { margin-top: 10px; font-size: 9px; color: var(--ink2); letter-spacing: .06em; }
+
+    /* STATS */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); border-bottom: 1px solid var(--border); margin-top: 0; }
+    .stat-cell { padding: 18px 20px; border-right: 1px solid var(--border); }
+    .stat-cell:last-child { border-right: none; }
+    .stat-lbl { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); margin-bottom: 5px; }
+    .stat-val { font-family: var(--ff-head); font-size: 15px; }
+    .stat-val.sm { font-size: 11px; word-break: break-all; }
+
+    /* RESULTS */
+    .results-section { display: none; }
+    .results-section.show { display: block; }
+    .results-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 0 0; flex-wrap: wrap; gap: 10px; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead { position: sticky; top: 48px; background: var(--bg); z-index: 5; }
+    th { text-align: left; padding: 10px 16px; font-size: 8px; color: var(--ink2); letter-spacing: .14em; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+    th:hover { color: var(--ink); }
+    th.act { color: var(--ink); }
+    td { padding: 10px 16px; border-bottom: 1px solid var(--bg2); }
+    tr:hover td { background: var(--bg2); }
+    .c-rk { width: 40px; color: var(--ink2); font-size: 10px; }
+    .c-addr a { color: var(--ink); text-decoration: none; font-size: 11px; }
+    .c-addr a:hover { text-decoration: underline; }
+    .c-cnt { text-align: right; font-family: var(--ff-head); font-size: 13px; }
+    .c-bar { width: 120px; padding-right: 16px; }
+    .bar-t { height: 2px; background: var(--bg2); border: 1px solid var(--border); }
+    .bar-f { height: 100%; background: var(--ink); }
+    .empty { padding: 60px 0; text-align: center; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); }
+
+    footer { border-top: 1px solid var(--border); padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 0; }
+    .ft { font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); }
+
+    @media (max-width: 640px) {
+      .page, nav { padding-left: 16px; padding-right: 16px; }
+      .filter-row { flex-direction: column; }
+      select { min-width: 100%; }
+      .c-bar { display: none; }
+      footer { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo">Normies Holder Scanner</div>
+  <button class="nav-btn" id="darkBtn" title="Toggle dark mode" onclick="toggleDark()">☾</button>
+</nav>
+
+<div class="page">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">Normies NFT · 10,000 Tokens · On-Chain Owner Data</div>
+    <h1>Holder<br/>Scanner</h1>
+    <p class="hero-sub">
+      Select a trait type and value, then scan all 10,000 Normies.<br/>
+      First run fetches metadata (~60s) and caches it for 24h.
+    </p>
+    <div class="hero-actions">
+      <button class="btn" id="clearBtn" onclick="clearCache()" style="display:none">✕ CLEAR CACHE</button>
+      <button class="btn" onclick="window.open('https://opensea.io/collection/normies','_blank')">VIEW ON OPENSEA →</button>
+    </div>
+  </div>
+
+  <!-- FILTER -->
+  <div class="filter-section">
+    <div class="sec-label">Configure Scan</div>
+    <div class="filter-row">
+      <div class="f-group">
+        <span class="f-label">Trait Type</span>
+        <select id="selType" disabled onchange="onTypeChange()">
+          <option value="">run first scan to load traits</option>
+        </select>
+      </div>
+      <div class="f-group">
+        <span class="f-label">Trait Value</span>
+        <select id="selValue" disabled onchange="onValueChange()">
+          <option value="">select type first</option>
+        </select>
+      </div>
+      <div class="f-group">
+        <span class="f-label">&nbsp;</span>
+        <button class="btn btn-fill" id="scanBtn" onclick="startScan()">↺ SCAN →</button>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progWrap">
+      <div class="progress-info">
+        <span id="progLabel">LOADING METADATA</span>
+        <span id="progCount">0 / 10000</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+    <div class="hint" id="hint">First scan fetches all 10,000 token metadata from api.normies.art and caches locally for 24h.</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="results-header">
+      <button class="btn btn-sm" id="dlBtn" onclick="downloadCSV()">↓ DOWNLOAD CSV</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th class="c-rk">#</th>
+          <th id="th-address" onclick="sortBy('address')">ADDRESS</th>
+          <th id="th-count" class="act" onclick="sortBy('count')" style="text-align:right">COUNT ↓</th>
+          <th class="c-bar"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  <span class="ft">Normies Holder Scanner · 0x9eb6e2025b64f340691e424b7fe7022ffde12438</span>
+  <span class="ft">api.normies.art · Ethereum JSON-RPC</span>
+</footer>
+
+<script>
+var NORMIES_API = "https://api.normies.art";
+var CONTRACT    = "0x9eb6e2025b64f340691e424b7fe7022ffde12438";
+var TOTAL       = 10000;
+var META_BATCH  = 60;
+var OWN_BATCH   = 30;
+var CACHE_KEY   = "normies_meta_v3";
+var CACHE_TTL   = 24 * 3600 * 1000;
+var RPC_URLS    = [
+  "https://eth.llamarpc.com",
+  "https://rpc.ankr.com/eth",
+  "https://cloudflare-eth.com",
+  "https://ethereum-rpc.publicnode.com"
+];
+
+// ownerOf(uint256) selector = 0x6352211e
+var OWNER_OF_SIG = "0x6352211e";
+
+var traitIndex  = {};  // { "Background": { "Blue": Set([1,2,...]), ... } }
+var metaCache   = {};  // { tokenId: {"Background":"Blue", ...} }
+var holders     = [];
+var lastType    = "";
+var lastValue   = "";
+var sortField   = "count";
+var sortDir     = -1;
+var isDark      = false;
+
+// ── Dark mode ─────────────────────────────────────────────
+function toggleDark() {
+  isDark = !isDark;
+  document.body.classList.toggle("dark", isDark);
+  document.getElementById("darkBtn").textContent = isDark ? "☀" : "☾";
+}
+
+// ── Cache ─────────────────────────────────────────────────
+function loadCacheFromStorage() {
+  try {
+    var raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return false;
+    var c = JSON.parse(raw);
+    if (Date.now() - c.ts > CACHE_TTL) return false;
+    metaCache = c.data;
+    buildTraitIndex();
+    var ageMin = Math.round((Date.now() - c.ts) / 60000);
+    var ageStr = ageMin < 60 ? ageMin + "m ago" : Math.round(ageMin/60) + "h ago";
+    setHint("✓ Cache loaded (" + ageStr + ") — " + Object.keys(metaCache).length + " tokens. Select a trait and scan.");
+    document.getElementById("clearBtn").style.display = "";
+    return true;
+  } catch(e) { return false; }
+}
+
+function saveToStorage() {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: metaCache })); } catch(e) {}
+}
+
+function clearCache() {
+  try { localStorage.removeItem(CACHE_KEY); } catch(e) {}
+  metaCache = {}; traitIndex = {}; holders = [];
+  document.getElementById("selType").innerHTML = "<option value=''>run first scan to load traits</option>";
+  document.getElementById("selType").disabled = true;
+  document.getElementById("selValue").innerHTML = "<option value=''>select type first</option>";
+  document.getElementById("selValue").disabled = true;
+  document.getElementById("clearBtn").style.display = "none";
+  document.getElementById("resultsSection").classList.remove("show");
+  setHint("Cache cleared. Run a scan to reload all metadata.");
+}
+
+// ── Build trait index from metaCache ──────────────────────
+function buildTraitIndex() {
+  traitIndex = {};
+  for (var id in metaCache) {
+    var attrs = metaCache[id];
+    for (var type in attrs) {
+      if (!traitIndex[type]) traitIndex[type] = {};
+      var val = attrs[type];
+      if (!traitIndex[type][val]) traitIndex[type][val] = [];
+      traitIndex[type][val].push(id);
+    }
+  }
+  fillTypeDropdown();
+}
+
+function fillTypeDropdown() {
+  var sel = document.getElementById("selType");
+  var types = Object.keys(traitIndex).sort();
+  sel.innerHTML = "<option value=''>— select trait type —</option>";
+  types.forEach(function(t) {
+    var o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o);
+  });
+  sel.disabled = false;
+}
+
+function onTypeChange() {
+  var type = document.getElementById("selType").value;
+  var sv   = document.getElementById("selValue");
+  sv.innerHTML = "<option value=''>— select value —</option>";
+  sv.disabled  = true;
+  document.getElementById("scanBtn").disabled = true;
+  if (!type || !traitIndex[type]) return;
+  var vals = Object.keys(traitIndex[type]).sort(function(a,b) {
+    return a.localeCompare(b, undefined, {numeric: true});
+  });
+  vals.forEach(function(v) {
+    var o = document.createElement("option"); o.value = v; o.textContent = v + " (" + traitIndex[type][v].length + ")"; sv.appendChild(o);
+  });
+  sv.disabled = false;
+}
+
+function onValueChange() {
+  document.getElementById("scanBtn").disabled = !document.getElementById("selValue").value;
+}
+
+// ── Fetch helpers ─────────────────────────────────────────
+async function fetchJ(url) {
+  var r = await fetch(url);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+// raw JSON-RPC ownerOf — no ethers.js needed
+async function ownerOf(rpcUrl, tokenId) {
+  var hex = tokenId.toString(16).padStart(64, "0");
+  var body = JSON.stringify({
+    jsonrpc: "2.0", id: tokenId, method: "eth_call",
+    params: [{ to: CONTRACT, data: OWNER_OF_SIG + hex }, "latest"]
+  });
+  var r = await fetch(rpcUrl, { method: "POST", headers: {"Content-Type":"application/json"}, body: body });
+  if (!r.ok) throw new Error("RPC HTTP " + r.status);
+  var j = await r.json();
+  if (!j.result || j.result === "0x") throw new Error("no result");
+  // result is 32-byte padded address → last 20 bytes
+  return "0x" + j.result.slice(-40).toLowerCase();
+}
+
+// Find a working RPC
+var activeRpc = null;
+async function getRpc() {
+  if (activeRpc) return activeRpc;
+  for (var i = 0; i < RPC_URLS.length; i++) {
+    try {
+      var addr = await ownerOf(RPC_URLS[i], 1);
+      if (addr && addr.length === 42) { activeRpc = RPC_URLS[i]; return activeRpc; }
+    } catch(e) {}
+  }
+  throw new Error("All RPC endpoints failed. Check your internet connection.");
+}
+
+// ── Main scan ─────────────────────────────────────────────
+async function startScan() {
+  var type  = document.getElementById("selType").value;
+  var value = document.getElementById("selValue").value;
+  if (!type || !value) return;
+
+  lastType = type; lastValue = value;
+  document.getElementById("scanBtn").disabled = true;
+  document.getElementById("resultsSection").classList.remove("show");
+  holders = [];
+
+  try {
+    // ── Step 1: load metadata (or use cache) ──────────────
+    if (Object.keys(metaCache).length < TOTAL) {
+      await loadAllMeta();
+    }
+
+    // ── Step 2: filter matching token IDs ─────────────────
+    var matchIds = (traitIndex[type] && traitIndex[type][value]) ? traitIndex[type][value] : [];
+    if (!matchIds.length) {
+      setStatus("No tokens found with " + type + ": " + value, true);
+      document.getElementById("scanBtn").disabled = false;
+      return;
+    }
+
+    // ── Step 3: ownerOf for each token ────────────────────
+    showProgress(true);
+    setProgLabel("FETCHING OWNERS ON-CHAIN");
+    setProgCount("connecting…");
+    setStatus("finding a working RPC endpoint…");
+
+    var rpc = await getRpc();
+    setStatus("using " + rpc.replace("https://","").split("/")[0]);
+
+    var ownerMap = {};
+    var done     = 0;
+
+    for (var b = 0; b < matchIds.length; b += OWN_BATCH) {
+      var batch = matchIds.slice(b, b + OWN_BATCH);
+      await Promise.all(batch.map(function(id) {
+        return ownerOf(rpc, parseInt(id)).then(function(addr) {
+          if (addr && addr !== "0x0000000000000000000000000000000000000000")
+            ownerMap[addr] = (ownerMap[addr] || 0) + 1;
+        }).catch(function() {}).finally(function() {
+          done++;
+          setProgCount(done + " / " + matchIds.length);
+          setProgFill(done / matchIds.length * 100);
+        });
+      }));
+    }
+
+    holders = Object.keys(ownerMap)
+      .map(function(a) { return { address: a, count: ownerMap[a] }; })
+      .sort(function(a,b) { return b.count - a.count; });
+
+    showProgress(false);
+    setStatus("");
+    renderResults(matchIds.length);
+
+  } catch(e) {
+    showProgress(false);
+    setStatus("Error: " + e.message, true);
+    console.error(e);
+  } finally {
+    document.getElementById("scanBtn").disabled = false;
+  }
+}
+
+async function loadAllMeta() {
+  metaCache = {};
+  showProgress(true);
+  setProgLabel("LOADING METADATA");
+  setStatus("fetching from api.normies.art…");
+
+  // Test start index
+  var startId = 1;
+  try {
+    var t = await fetchJ(NORMIES_API + "/normie/0/metadata");
+    if (t && t.attributes) startId = 0;
+  } catch(e) {}
+
+  var ids  = [];
+  for (var i = 0; i < TOTAL; i++) ids.push(i + startId);
+  var done = 0;
+
+  for (var b = 0; b < ids.length; b += META_BATCH) {
+    var batch = ids.slice(b, b + META_BATCH);
+    await Promise.all(batch.map(function(id) {
+      return fetchJ(NORMIES_API + "/normie/" + id + "/metadata")
+        .then(function(meta) {
+          var attrs = meta.attributes || [];
+          var obj   = {};
+          attrs.forEach(function(a) {
+            if (a.trait_type != null && a.value != null)
+              obj[String(a.trait_type)] = String(a.value);
+          });
+          metaCache[id] = obj;
+        }).catch(function() {})
+        .finally(function() {
+          done++;
+          setProgCount(done + " / " + TOTAL);
+          setProgFill(done / TOTAL * 100);
+          if (done % 500 === 0) setStatus(done + " tokens loaded…");
+        });
+    }));
+  }
+
+  saveToStorage();
+  buildTraitIndex();
+  document.getElementById("clearBtn").style.display = "";
+  setHint("✓ " + Object.keys(metaCache).length + " tokens cached for 24h.");
+  showProgress(false);
+  setStatus("");
+}
+
+// ── Render results ────────────────────────────────────────
+function renderResults(matchCount) {
+  sortField = "count"; sortDir = -1;
+  updateThHeaders();
+
+  // Stats row
+  var stats = document.getElementById("statsRow");
+  stats.innerHTML =
+    cell("Unique Holders", holders.length.toLocaleString()) +
+    cell("Tokens w/ Trait", matchCount.toLocaleString()) +
+    cell("Trait Type", lastType, true) +
+    cell("Trait Value", lastValue, true);
+
+  drawRows();
+  document.getElementById("resultsSection").classList.add("show");
+  document.getElementById("resultsSection").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function cell(lbl, val, sm) {
+  return '<div class="stat-cell"><div class="stat-lbl">' + lbl + '</div><div class="stat-val' + (sm?" sm":"") + '">' + val + '</div></div>';
+}
+
+function drawRows() {
+  var data = holders.slice().sort(function(a,b) {
+    return sortField === "count" ? sortDir*(a.count-b.count) : sortDir*a.address.localeCompare(b.address);
+  });
+  var tb  = document.getElementById("tbody");
+  var max = data.length ? data[0].count : 1;
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">No holders found.</td></tr>'; return; }
+  tb.innerHTML = data.map(function(h, i) {
+    var pct = (h.count / max * 100).toFixed(1);
+    return '<tr>' +
+      '<td class="c-rk">' + (i+1) + '</td>' +
+      '<td class="c-addr"><a href="https://opensea.io/' + h.address + '" target="_blank" rel="noopener">' + h.address + '</a></td>' +
+      '<td class="c-cnt">' + h.count + '</td>' +
+      '<td class="c-bar"><div class="bar-t"><div class="bar-f" style="width:' + pct + '%"></div></div></td>' +
+      '</tr>';
+  }).join("");
+}
+
+function sortBy(f) {
+  if (sortField === f) sortDir *= -1;
+  else { sortField = f; sortDir = f === "count" ? -1 : 1; }
+  updateThHeaders();
+  drawRows();
+}
+
+function updateThHeaders() {
+  ["address","count"].forEach(function(f) {
+    var th = document.getElementById("th-"+f);
+    if (!th) return;
+    th.textContent = (f==="address"?"ADDRESS":"COUNT") + (sortField===f?(sortDir>0?" ↑":" ↓"):"");
+    th.className   = sortField===f?"act":"";
+    if (f==="count") th.style.textAlign="right";
+  });
+}
+
+// ── CSV ───────────────────────────────────────────────────
+function downloadCSV() {
+  if (!holders.length) return;
+  var csv = "Rank,Address,Count,Trait Type,Trait Value\r\n";
+  holders.forEach(function(h,i) {
+    csv += (i+1)+',"'+h.address+'",'+h.count+',"'+lastType+'","'+lastValue+'"\r\n';
+  });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download = ("normies_"+lastType+"_"+lastValue+"_holders.csv").replace(/[^a-zA-Z0-9_\-.]/g,"_");
+  a.click();
+}
+
+// ── UI helpers ────────────────────────────────────────────
+function showProgress(v) { document.getElementById("progWrap").classList.toggle("show", v); }
+function setProgLabel(t) { document.getElementById("progLabel").textContent = t; }
+function setProgCount(t) { document.getElementById("progCount").textContent = t; }
+function setProgFill(p)  { document.getElementById("progFill").style.width = Math.min(100,p)+"%"; }
+function setStatus(msg, err) {
+  var el = document.getElementById("statusMsg");
+  el.textContent = msg;
+  el.className = "status-msg" + (err?" err":"");
+}
+function setHint(msg) { document.getElementById("hint").textContent = msg; }
+
+// ── Boot ─────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", function() {
+  loadCacheFromStorage();
+});
+</script>
+</body>
+</html>
